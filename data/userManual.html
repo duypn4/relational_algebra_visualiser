@@ -1,0 +1,93 @@
+<!-- HTML v5-->
+<!DOCTYPE HTML>
+<html>
+    <!-- HEAD -->
+    <head>
+        <meta charset="UTF-8">
+        <title> User Manual </title>
+		<!-- Style -->
+	    <style>
+		    html { font-family:Arial; color:#ffffff; }
+		    body { background:#468499; margin:0; }
+			#container { background:#eedc82; }
+			#header { height:50px; background:#91b4ff; padding-top:20px; text-align:center; font-size:25px; }
+			#navBar { height:20px; clear:both; }
+			#navBar ul { margin:0; padding:0; list-style-type:none; }
+			#navBar ul li { padding:10px; float:left; }
+			#navBar ul li a { font-size:12px; float:left; float:left; padding:0 0 0 20px; display:block; }
+			#content-area { height:200px; background:#468499; border-top:2px solid #cb5404; padding-left:10px; clear:both; font-size:13px; }
+	    </style><!-- End Style -->
+    </head><!-- END HEAD -->
+    <!-- BODY -->
+    <body>
+	    <!-- CONTAINER -->
+		<div id="container">
+            <!-- HEADER -->
+            <div id="header">
+			    RAV User Manual
+            </div>
+	        
+			<!-- NEVIGATE BAR -->
+			<div id="navBar">
+				<ul>
+					<li><a href="aboutRAV.html">Home</a></li>
+					<li><a href="#code">Code</a></li>
+				</ul>
+			</div>
+			
+		    <!-- CONTENT AREA -->
+            <div id="content-area">
+			    <h3>1.Leaner</h3>
+				<h4>Step 1:</h4>
+				<p>
+				    Enter your relation algebra into an input field.<br>
+					You need to follow the defined grammar for inputing queries correctly.<br>
+					<br>
+					
+					For Select operator, just enter as normally in relational algebra and do not need to put bracket
+					on a result relation except those from binary operators such Union, Join, etc. This is similar to Project operator.<br>
+					Eg:<br>
+					σ age>23 USERS<br>
+					σ name="long" σ salary=1000 USERS<br>
+					π name,address (USERS ⋈mms=nns WORKER)<br>
+					<br>
+					
+					For any binary operators, the format is stil the same as the relational algebra in database. You need to be carefull with brackets with this kind of operator.
+					Union, Intersection and Production does need to separate by brackets cause they are commutative and associative. In contrast, Left_Join, Right_Join and Join 
+					require bracket between each pair of them because the way they are grouped will affect their intermediate results<br>
+					Eg:<br>
+					STAFF ⋃ STUDENT ⋃ TEACHER<br>
+					(STAFF ⋈a=b STUDENT) ⋈c=d TEACHER<br>
+					(STAFF ⋂ STUDENT) ⋈c=d TEACHER<br>
+					<br>
+					
+					If you apply this kind of operator on intermediate results from selection or projection, bracket is again
+                    not necessary. When you try to type unecessary brackets to the input field, the system will notify a syntax error.<br>
+                    Eg:<br>
+                    σ age>23 STAFF ⋂ π name,address STUDENT<br>
+                    <br>
+                    
+                    <b>Note:</b> all comparison symbol (>,<,=,≥,≤,≠) used in the application is as same as in Java and also the string is distinguished by double quotes " surrounding it.  			
+                </p>
+                
+				<h4>Step 2:</h4>
+				<p>
+				    Click on "Generate Tree" button to view an output query tree.<br>
+					Click on "Highlight Tree" button to see inefficencies with a input query.<br>
+					Save and open the query trees by press "File" icon on the top-left corner<br>of the main application window.<br>
+					You can zoom in and out to view the tree graph flexibly by click on the list of items on the "Tools" menu adjacent to "File" icon.<br>
+                    To get information and guidline, hit "Help?" next to the "File" icon.					
+				</p>
+				
+				<h3>2.Developer:</h3>
+				<p>
+				    My application stil got many problems about performance and need to develop more useful functions for users.
+					The best way to improve software applications is to invoke a large group of developers working together
+					because of reducing a chance of getting bug as well as integrating more positive ideas. As the result,
+                    i have decided to put my source code on GitHub so anyone interested in my application can download and enhance the application.					
+				</p>
+				<a name="code" href="https://github.com/duypn4/relational_algebra_visualiser">Source-Code</a>
+            </div>
+		</div><!-- END CONTAINER -->
+    </body><!-- END BODY -->
+</html>

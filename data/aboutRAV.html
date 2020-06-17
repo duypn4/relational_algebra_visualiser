@@ -1,0 +1,79 @@
+<!-- HTML v5-->
+<!DOCTYPE HTML>
+<html>
+    <!-- HEAD -->
+    <head>
+        <title> RAV Application </title>
+		<!-- Style -->
+	    <style>
+		    html { font-family:Arial; color:#ffffff; }
+		    body { background:#468499; margin:0; }
+			#container { background:#eedc82; }
+			#header { height:70px; background:#91b4ff; padding-top:10px; text-align:center; font-size:25px; }
+			#logo { float:left; width:72px; height:50px; margin:5px 10px auto 10px; background-image: url(ravLogo.png); background-size:cover; }
+			#navBar { height:20px; clear:both; }
+			#navBar ul { margin:0; padding:0; list-style-type:none; }
+			#navBar ul li { padding:10px; float:left; }
+			#navBar ul li a { font-size:12px; float:left; float:left; padding:0 0 0 20px; display:block; }
+			#content-area { height:200px; background:#468499; border-top:2px solid #cb5404; padding-left:10px; clear:both; font-size:13px; }
+	    </style><!-- End Style -->
+    </head><!-- END HEAD -->
+    <!-- BODY -->
+    <body>
+	    <!-- CONTAINER -->
+		<div id="container">
+            <!-- HEADER -->
+            <div id="header">
+			    Relational Algebra Visualizer
+			    <div id="logo"></div>
+            </div>
+	        
+			<!-- NEVIGATE BAR -->
+			<div id="navBar">
+				<ul>
+					<li><a href="userManual.html">Guideline</a></li>
+				    <li><a href="#contact">Contact</a></li>
+				</ul>
+			</div>
+			
+		    <!-- CONTENT AREA -->
+            <div id="content-area">
+			    <h3>1.Introduction:</h3>
+				<p>
+				    Relational Algebra Visualizer is a java application which is used mainly to translate a relational algebra query into a query tree for IT learner.
+				    In addtion, the application is also able to hightlight inefficencies within the query as well as allows users to save the tree graph for later purposes.
+				    The tool has been developed by Ngoc Duy Pham for the final year project supervised by Dr. Floriana and Dr. David at University of Liverpool.
+				    In addition, a big thank to Dr Maduka who suggested me many helpfull ideas to accomplish this project.
+                </p>
+				
+				<h3>2.Ethical Use of Data:</h3>
+				<p>
+				    I have used a lexical analyser generator called JFlex by Klein, G., Rowe, S. and Decamps, R. 
+				    I also made use of CUP which is LALR parser generator developed by TUM team and NativeSwing framework from Deckers, C.
+				    Moreover, there are some materials being studied to implement the project such as CUP documentation and code examples.
+				    JFlex/CUP article from University of Auckland in New Zealand.
+				</p>
+				
+				<h3><a name="contact"></a>3.Contact:</h3>
+				<table border="1">
+				    <tr>
+					    <td><h4>Name</h4></td>
+						<td>NGOC DUY PHAM</td>
+					</tr>
+				    <tr>
+					    <td><h4>Address</h4></td>
+						<td>Flat 61, The Sidings building, Crown street, Liverpool.</td>
+					</tr>
+					<tr>
+					    <td><h4>Email</h4></td>
+						<td>N.Pham@student.liverpool.ac.uk</td>
+					</tr>
+					<tr>
+					    <td><h4>Phone</h4></td>
+						<td>+44 7404890453</td>
+					</tr>
+				</table>
+            </div>
+		</div><!-- END CONTAINER -->
+    </body><!-- END BODY -->
+</html>

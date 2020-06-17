@@ -1,0 +1,400 @@
+import java_cup.runtime.ComplexSymbolFactory;
+import java_cup.runtime.ScannerBuffer;
+import java_cup.runtime.XMLElement;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamWriter;
+import java.io.*;
+import java.util.Vector;
+
+import javax.xml.transform.*;
+import javax.xml.transform.stream.*;
+
+action code {:
+//variable to store attribute names for Project operator
+private String attributeList = ""; 
+:};
+
+parser code {:
+             //buffer to store all derived token
+             private ScannerBuffer scanner;
+			 //query analyzer reference
+             private QueryTreeViewer treeViewer;
+			 //vector to store executed operators
+             private Vector<String> table;
+             
+		     public Parser(ScannerBuffer lexer, ComplexSymbolFactory factory, QueryTreeViewer viewer) {
+				super(lexer,factory);
+				scanner = lexer;
+				treeViewer = viewer;
+				table = new Vector<String>();
+		     }
+		     
+			 //method to access the vector
+		     public Vector<String> getExecutedTable() {
+		            return table;
+		     }
+:};
+
+terminal String SELECT, PROJECT, UNION, INTER, RJOIN, LJOIN, JOIN, PRODUCT, NUMBER, ATTRIBUTE, TABLE, GREATER, SMALLER, EQUAL, GEQUAL, LEQUAL, NEQUAL;
+terminal COMMA, LEFT, RIGHT, QUOTE;
+non terminal Query, Statement,  Selection, Projection, GenericUnion, GenericIntersection, GenericProduction, GenericLeftJoin, GenericRightJoin, GenericJoin, Partition, Combination, Intersection, Production, LeftJoin, RightJoin, Join, Generic, Relation;
+
+start with Statement;
+
+Statement::= Query:query
+         {:     try{   
+                      XMLElement element = (XMLElement) query;
+			          // create XML output file
+			          XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
+			          XMLStreamWriter streamWriter = outFactory.createXMLStreamWriter(new FileOutputStream("./data/dump.txt"));
+			          // dump XML output to the file
+			          XMLElement.dump(scanner, streamWriter, element, "expr", "stmt");
+
+			          // transform the parse tree into an AST and a rendered HTML version
+			          Transformer transformer = TransformerFactory.newInstance()
+				                                                  .newTransformer(new StreamSource(new File("./data/tree.xsl")));
+			          Source text = new StreamSource(new File("./data/dump.txt"));
+			          transformer.transform(text, new StreamResult(new File("./data/output.xml")));
+			          transformer = TransformerFactory.newInstance()
+				                                      .newTransformer(new StreamSource(new File("./data/tree-view.xsl")));
+			          text = new StreamSource(new File("./data/output.xml"));
+			          transformer.transform(text, new StreamResult(new File("./data/queryTree.html")));
+			          
+			          treeViewer.displayQueryTree(false);
+			       }
+			       catch(Exception exception) {
+			          exception.printStackTrace();
+			       }
+		 :}
+		 |
+		 error
+	     {: treeViewer.displayQueryTree(true); :}
+         ;
+
+Query::=  Selection:selection
+          |
+          Projection:projection
+          |
+          GenericUnion:genericUnion
+          |
+          GenericIntersection:genericIntersection
+          |
+          GenericProduction:genericProduction
+          |
+          GenericLeftJoin:genericLeftJoin
+          |
+          GenericRightJoin:genericRightJoin
+          |
+          GenericJoin:genericJoin
+          ;
+
+GenericUnion::= Combination:combination
+                |
+				LEFT Generic:generic1 RIGHT UNION:union LEFT Generic:generic2 RIGHT
+				{: table.add(union); :}
+				|
+				LEFT Generic:generic RIGHT UNION:union Relation:relation
+				{: table.add(union); :}
+				|
+				LEFT Generic:generic RIGHT UNION:union GenericUnion:genericUnion
+				{: table.add(union); :}
+				|
+				Relation:relation UNION:union LEFT Generic:generic RIGHT
+				{: table.add(union); :}
+				|
+				Relation:relation UNION:union GenericUnion:genericUnion
+				{: table.add(union); :}
+				;
+ 
+GenericIntersection::= Intersection:intersection
+                       |
+					   LEFT Generic:generic3 RIGHT INTER:intersect LEFT Generic:generic4 RIGHT
+					   {: table.add(intersect); :}
+					   |
+					   LEFT Generic:generic RIGHT INTER:intersect Relation:relation
+					   {: table.add(intersect); :}
+					   |
+					   LEFT Generic:generic RIGHT INTER:intersect GenericIntersection:genericIntersection
+					   {: table.add(intersect); :}
+					   |
+					   Relation:relation INTER:intersect LEFT Generic:generic RIGHT
+					   {: table.add(intersect); :}
+					   |
+					   Relation:relation INTER:intersect GenericIntersection:genericIntersection
+					   {: table.add(intersect); :}
+					   ;
+
+GenericProduction::= Production:production
+                     |
+					 LEFT Generic:generic5 RIGHT PRODUCT:product LEFT Generic:generic6 RIGHT
+					 {: table.add(product); :}
+					 |
+					 LEFT Generic:generic RIGHT PRODUCT:product Relation:relation
+					 {: table.add(product); :}
+					 |
+					 LEFT Generic:generic RIGHT PRODUCT:product GenericProduction:genericProduction
+					 {: table.add(product); :}
+					 |
+					 Relation:relation PRODUCT:product LEFT Generic:generic RIGHT
+					 {: table.add(product); :}
+					 |
+					 Relation:relation PRODUCT:product GenericProduction:genericProduction
+					 {: table.add(product); :}
+					 ;
+
+GenericLeftJoin::= LeftJoin:leftJoin
+                   |
+				   LEFT Generic:generic7 RIGHT LJOIN:left_join ATTRIBUTE:attribute1 EQUAL:equal ATTRIBUTE:attribute2 LEFT Generic:generic8 RIGHT
+				   {: table.add(left_join + " " + attribute1 + equal + attribute2); :}
+				   |
+				   LEFT Generic:generic RIGHT LJOIN:left_join ATTRIBUTE:attribute3 EQUAL:equal ATTRIBUTE:attribute4 Relation:relation
+				   {: table.add(left_join + " " + attribute3 + equal + attribute4); :}
+				   |
+				   Relation:relation LJOIN:left_join ATTRIBUTE:attribute7 EQUAL:equal ATTRIBUTE:attribute8 LEFT Generic:generic RIGHT
+				   {: table.add(left_join + " " + attribute7 + equal + attribute8); :}
+				   ;
+				   
+GenericRightJoin::= RightJoin:rightJoin 
+                    |
+				    LEFT Generic:generic9 RIGHT RJOIN:right_join ATTRIBUTE:attribute11 EQUAL:equal ATTRIBUTE:attribute12 LEFT Generic:generic10 RIGHT
+				    {: table.add(right_join + " " + attribute11 + equal + attribute12); :}
+				    |
+				    LEFT Generic:generic RIGHT RJOIN:right_join ATTRIBUTE:attribute13 EQUAL:equal ATTRIBUTE:attribute14 Relation:relation
+				    {: table.add(right_join + " " + attribute13 + equal + attribute14); :}
+				    |
+				    Relation:relation RJOIN:right_join ATTRIBUTE:attribute17 EQUAL:equal ATTRIBUTE:attribute18 LEFT Generic:generic RIGHT
+				    {: table.add(right_join + " " + attribute17 + equal + attribute18); :}
+				    ;
+				   
+GenericJoin::= Join:join
+               |
+			   LEFT Generic:generic10 RIGHT JOIN:join ATTRIBUTE:attribute21 EQUAL:equal ATTRIBUTE:attribute22 LEFT Generic:generic11 RIGHT
+			   {: table.add(join + " " + attribute21 + equal + attribute22); :}
+			   |
+			   LEFT Generic:generic RIGHT JOIN:join ATTRIBUTE:attribute23 EQUAL:equal ATTRIBUTE:attribute24 Relation:relation
+			   {: table.add(join + " " + attribute23 + equal + attribute24); :}
+			   |
+		       Relation:relation JOIN:join ATTRIBUTE:attribute27 EQUAL:equal ATTRIBUTE:attribute28 LEFT Generic:generic RIGHT
+			   {: table.add(join + " " + attribute27 + equal + attribute28); :}
+			   ;
+				   
+Generic::= Combination:combination
+           |
+		   Intersection:intersection
+		   |
+           Production:production
+           |
+           LeftJoin:leftJoin
+           |
+           RightJoin:rightJoin
+           |
+           Join:join
+           ;
+		   
+Combination::= Relation:relation1 UNION:union Relation:relation2
+               {: table.add(union); :}
+               ;
+               
+Intersection::= Relation:relation3 INTER:intersect Relation:relation4
+                {: table.add(intersect); :}
+                ;
+                     
+Production::= Relation:relation5 PRODUCT:product Relation:relation6
+              {: table.add(product); :}
+              ;
+
+LeftJoin::= Relation:relation7 LJOIN:left_join ATTRIBUTE:attribute1 EQUAL:equal ATTRIBUTE:attribute2 Relation:relation8
+            {: table.add(left_join + " " + attribute1 + equal + attribute2); :}
+			;
+
+RightJoin::= Relation:relation9 RJOIN:right_join ATTRIBUTE:attribute3 EQUAL:equal ATTRIBUTE:attribute4 Relation:relation10
+             {: table.add(right_join + " " + attribute3 + equal + attribute4); :}
+			 ;
+
+Join::= Relation:relation11 JOIN:join ATTRIBUTE:attribute5 EQUAL:equal ATTRIBUTE:attribute6 Relation:relation12
+        {: table.add(join + " " + attribute5 + equal + attribute6); :}
+		;
+
+Selection::= SELECT:select ATTRIBUTE:attribute GREATER:great NUMBER:number Relation:relation
+             {: table.add(select + " " + attribute + great + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute SMALLER:less NUMBER:number Relation:relation
+             {: table.add(select + " " + attribute + less + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute EQUAL:equal NUMBER:number Relation:relation
+             {: table.add(select + " " + attribute + equal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute1 EQUAL:equal QUOTE ATTRIBUTE:attribute2 QUOTE Relation:relation
+             {: table.add(select + " " + attribute1 + equal + "\"" + attribute2 + "\""); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GEQUAL:gequal NUMBER:number Relation:relation
+             {: table.add(select + " " + attribute + gequal + number); :}
+             |
+              SELECT:select ATTRIBUTE:attribute LEQUAL:lequal NUMBER:number Relation:relation
+             {: table.add(select + " " + attribute + lequal + number); :}
+             |
+              SELECT:select ATTRIBUTE:attribute NEQUAL:nequal NUMBER:number Relation:relation
+             {: table.add(select + " " + attribute + nequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GREATER:great NUMBER:number LEFT GenericProduction:genericProduction RIGHT
+             {: table.add(select + " " + attribute + great + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute SMALLER:less NUMBER:number LEFT GenericProduction:genericProduction RIGHT
+             {: table.add(select + " " + attribute + less + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute EQUAL:equal NUMBER:number LEFT GenericProduction:genericProduction RIGHT
+             {: table.add(select + " " + attribute + equal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute3 EQUAL:equal QUOTE ATTRIBUTE:attribute4 QUOTE LEFT GenericProduction:genericProduction RIGHT
+             {: table.add(select + " " + attribute3 + equal + "\"" + attribute4 + "\""); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GEQUAL:gequal NUMBER:number LEFT GenericProduction:genericProduction RIGHT
+             {: table.add(select + " " + attribute + gequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute LEQUAL:lequal NUMBER:number LEFT GenericProduction:genericProduction RIGHT
+             {: table.add(select + " " + attribute + lequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute NEQUAL:nequal NUMBER:number LEFT GenericProduction:genericProduction RIGHT
+             {: table.add(select + " " + attribute + nequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GREATER:great NUMBER:number LEFT GenericUnion:genericUnion RIGHT
+             {: table.add(select + " " + attribute + great + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute SMALLER:less NUMBER:number LEFT GenericUnion:genericUnion RIGHT
+             {: table.add(select + " " + attribute + less + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute EQUAL:equal NUMBER:number LEFT GenericUnion:genericUnion RIGHT
+             {: table.add(select + " " + attribute + equal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute5 EQUAL:equal QUOTE ATTRIBUTE:attribute6 QUOTE LEFT GenericUnion RIGHT
+             {: table.add(select + " " + attribute5 + equal + "\"" + attribute6 + "\""); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GEQUAL:gequal NUMBER:number LEFT GenericUnion:genericUnion RIGHT
+             {: table.add(select + " " + attribute + gequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute LEQUAL:lequal NUMBER:number LEFT GenericUnion:genericUnion RIGHT
+             {: table.add(select + " " + attribute + lequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute NEQUAL:nequal NUMBER:number LEFT GenericUnion:genericUnion RIGHT
+             {: table.add(select + " " + attribute + nequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GREATER:great NUMBER:number LEFT GenericIntersection:genericIntersection RIGHT
+             {: table.add(select + " " + attribute + great + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute SMALLER:less NUMBER:number LEFT GenericIntersection:genericIntersection RIGHT
+             {: table.add(select + " " + attribute + less + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute EQUAL:equal NUMBER:number LEFT GenericIntersection:genericIntersection RIGHT
+             {: table.add(select + " " + attribute + equal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute7 EQUAL:equal QUOTE ATTRIBUTE:attribute8 QUOTE LEFT GenericIntersection:genericIntersection RIGHT
+             {: table.add(select + " " + attribute7 + equal + "\"" + attribute8 + "\""); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GEQUAL:gequal NUMBER:number LEFT GenericIntersection:genericIntersection RIGHT
+             {: table.add(select + " " + attribute + gequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute LEQUAL:lequal NUMBER:number LEFT GenericIntersection:genericIntersection RIGHT
+             {: table.add(select + " " + attribute + lequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute NEQUAL:nequal NUMBER:number LEFT GenericIntersection:genericIntersection RIGHT
+             {: table.add(select + " " + attribute + nequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GREATER:great NUMBER:number LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: table.add(select + " " + attribute + great + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute SMALLER:less NUMBER:number LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: table.add(select + " " + attribute + less + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute EQUAL:equal NUMBER:number LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: table.add(select + " " + attribute + equal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute9 EQUAL:equal QUOTE ATTRIBUTE:attribute10 QUOTE LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: table.add(select + " " + attribute9 + equal + "\"" + attribute10 + "\""); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GEQUAL:gequal NUMBER:number LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: table.add(select + " " + attribute + gequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute LEQUAL:lequal NUMBER:number LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: table.add(select + " " + attribute + lequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute NEQUAL:nequal NUMBER:number LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: table.add(select + " " + attribute + nequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GREATER:great NUMBER:number LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: table.add(select + " " + attribute + great + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute SMALLER:less NUMBER:number LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: table.add(select + " " + attribute + less + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute EQUAL:equal NUMBER:number LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: table.add(select + " " + attribute + equal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute11 EQUAL:equal QUOTE ATTRIBUTE:attribute12 QUOTE LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: table.add(select + " " + attribute11 + equal + "\"" + attribute12 + "\""); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GEQUAL:gequal NUMBER:number LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: table.add(select + " " + attribute + gequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute LEQUAL:lequal NUMBER:number LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: table.add(select + " " + attribute + lequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute NEQUAL:nequal NUMBER:number LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: table.add(select + " " + attribute + nequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GREATER:great NUMBER:number LEFT GenericJoin:genericJoin RIGHT
+             {: table.add(select + " " + attribute + great + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute SMALLER:less NUMBER:number LEFT GenericJoin:genericJoin RIGHT
+             {: table.add(select + " " + attribute + less + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute EQUAL:equal NUMBER:number LEFT GenericJoin:genericJoin RIGHT
+             {: table.add(select + " " + attribute + equal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute13 EQUAL:equal QUOTE ATTRIBUTE:attribute14 QUOTE LEFT GenericJoin:genericJoin RIGHT
+             {: table.add(select + " " + attribute13 + equal + "\"" + attribute14 + "\""); :}
+             |
+             SELECT:select ATTRIBUTE:attribute GEQUAL:gequal NUMBER:number LEFT GenericJoin:genericJoin RIGHT
+             {: table.add(select + " " + attribute + gequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute LEQUAL:lequal NUMBER:number LEFT GenericJoin:genericJoin RIGHT
+             {: table.add(select + " " + attribute + lequal + number); :}
+             |
+             SELECT:select ATTRIBUTE:attribute NEQUAL:nequal NUMBER:number LEFT GenericJoin:genericJoin RIGHT
+             {: table.add(select + " " + attribute + nequal + number); :}
+             ;
+             
+Projection::= PROJECT:project Partition:partition
+              {: table.add(project + " " + attributeList); :};
+
+Partition::= ATTRIBUTE:attribute Relation:relation
+             {: attributeList = attributeList + attribute; :}
+             |
+             ATTRIBUTE:attribute LEFT GenericUnion:genericUnion RIGHT
+             {: attributeList = attributeList + attribute; :}
+             |
+             ATTRIBUTE:attribute LEFT GenericIntersection:genericIntersection RIGHT
+             {: attributeList = attributeList + attribute; :}
+             |
+             ATTRIBUTE:attribute LEFT GenericProduction:genericProduction RIGHT
+             {: attributeList = attributeList + attribute; :}
+             |
+             ATTRIBUTE:attribute LEFT GenericLeftJoin:genericLeftJoin RIGHT
+             {: attributeList = attributeList + attribute; :}
+             |
+             ATTRIBUTE:attribute LEFT GenericRightJoin:genericRightJoin RIGHT
+             {: attributeList = attributeList + attribute; :}
+             |
+             ATTRIBUTE:attribute LEFT GenericJoin:genericJoin RIGHT
+             {: attributeList = attributeList + attribute; :}
+             |
+             ATTRIBUTE:attribute COMMA Partition:partition
+             {: attributeList = attribute + "," + attributeList; :}
+             ; 
+ 
+Relation::= Selection:selection
+            |
+            Projection:projection
+            |
+            TABLE:table
+            ;
+          
