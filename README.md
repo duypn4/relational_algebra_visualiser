@@ -6,15 +6,15 @@ The tool has been developed by **Ngoc Duy Pham** for the final year project supe
 In addition, a big thank to **Dr. Maduka** who suggested me many helpfull ideas to accomplish this project.  
 
 ## Screenshots
-**Alerting syntax errors of query**
+**Alerting Syntax Errors of Query**
 
 ![](images/error_query.png)
 
-**Visualising queries and highlight inefficencies**
+**Visualising Queries and Highlighting Inefficencies**
 
 ![](images/highlight_query.png)
 
-**Searching information on Internet**
+**Searching Information on Internet**
 
 ![](images/search_web.png)
 
