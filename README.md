@@ -5,7 +5,7 @@ The tool has been developed by **Ngoc Duy Pham** for the final year project supe
 
 In addition, a big thank to **Dr. Maduka** who suggested me many helpfull ideas to accomplish this project.  
 
-### Screenshots
+## Screenshots
 **Alerting syntax errors of query**
 
 ![](images/error_query.png)
@@ -18,7 +18,7 @@ In addition, a big thank to **Dr. Maduka** who suggested me many helpfull ideas 
 
 ![](images/search_web.png)
 
-### How to use it?
+## How to use it?
 The application can only be run on Window 64-bit.  
 MacOs and Unix/Linux distributions do not support it very well.
 
@@ -29,4 +29,4 @@ MacOs and Unix/Linux distributions do not support it very well.
 
 - **Step 3**: Click on run.bat file to run the system.
 
-### Accessing the user guideline within the system for more details!
+## Accessing the user guideline within the system for more details!
